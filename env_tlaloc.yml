@@ -1,0 +1,12 @@
+name: tlaloc
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11
+  - numpy
+  - matplotlib
+  - rasterio
+  - cartopy
+  - requests
+  - tqdm
