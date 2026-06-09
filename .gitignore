@@ -1,5 +1,7 @@
-logs/*
-paneles_ensemble/*
+logs/
+paneles_ensemble/
+tmp/
+assets/
 __pycache__/
 *.pyc
 .env
