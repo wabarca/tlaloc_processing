@@ -364,6 +364,12 @@ def create_panel(
 
     axes = axes.flatten()
 
+    if len(layout) != len(axes):
+        raise ValueError(
+            f"El panel '{panel_type}' define {len(layout)} productos "
+            f"para una cuadrícula de {len(axes)} ejes"
+        )
+
     # -----------------------------------------
     # Productos
     # -----------------------------------------
@@ -650,6 +656,7 @@ def generate_accumulation_panels(
             lon=lon,
             lat=lat,
             timestep=timestep,
+            suffix=f"_acc{accumulation_hours:02d}",
         )
 
 
@@ -673,10 +680,15 @@ def generate_cumulative_panel(
         72h
     """
 
+    if hours > ensemble.shape[0]:
+        raise ValueError(
+            f"No hay suficientes timesteps para un acumulado de {hours} horas"
+        )
+
     stack = accumulate_period(
         ensemble,
         0,
-        min(hours, ensemble.shape[0]),
+        hours,
     )
 
     products = compute_products(stack)
@@ -686,6 +698,7 @@ def generate_cumulative_panel(
         lon=lon,
         lat=lat,
         timestep=hours,
+        suffix=f"_acc{hours}",
     )
 
 
@@ -711,7 +724,7 @@ def generate_daily_panels(
         (48, 72),
     ]
 
-    for start, end in periods:
+    for day, (start, end) in enumerate(periods, start=1):
 
         if start >= ensemble.shape[0]:
             continue
@@ -734,4 +747,5 @@ def generate_daily_panels(
             lon=lon,
             lat=lat,
             timestep=end,
+            suffix=f"_day{day}",
         )

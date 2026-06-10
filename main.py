@@ -12,7 +12,10 @@ from graphics.panels import (
     create_all_panels,
 )
 
-from core.accumulations import accumulate_period
+from core.accumulations import (
+    accumulate_period,
+    rolling_windows,
+)
 
 # =====================================================
 # TIMESTEP
@@ -70,12 +73,7 @@ def process_6h_accumulations(
 
     nt = ensemble.shape[0]
 
-    for start in range(0, nt, 6):
-
-        end = min(start + 6, nt)
-
-        if end - start < 6:
-            continue
+    for start, end in rolling_windows(nt, 6):
 
         stack = accumulate_period(
             ensemble,

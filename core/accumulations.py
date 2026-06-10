@@ -21,12 +21,22 @@ def accumulate_period(
     )
 
 
-def rolling_windows(nt, hours):
+def rolling_windows(
+    nt,
+    hours,
+    include_partial=False,
+):
+    if hours <= 0:
+        raise ValueError("hours debe ser mayor que cero")
+
     windows = []
 
     for start in range(0, nt, hours):
 
         end = min(start + hours, nt)
+
+        if not include_partial and end - start < hours:
+            continue
 
         windows.append((start, end))
 
