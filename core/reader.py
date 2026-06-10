@@ -20,6 +20,7 @@ def read_geotiff(path):
     Lee un GeoTIFF y devuelve:
         data      : ndarray
         transform : affine transform
+        crs       : rasterio CRS
     """
 
     with rasterio.open(path) as src:
@@ -29,6 +30,7 @@ def read_geotiff(path):
             out_dtype=np.float32,
         )
         transform = src.transform
+        crs = src.crs
 
         print(path)
 
@@ -37,7 +39,7 @@ def read_geotiff(path):
             np.nanmax(data),
         )
 
-    return data, transform
+    return data, transform, crs
 
 
 def build_coordinates(
@@ -112,7 +114,13 @@ def load_ensemble():
     if not os.path.exists(first_file):
         raise FileNotFoundError(f"No existe archivo: {first_file}")
 
-    first_data, transform = read_geotiff(first_file)
+    first_data, transform, crs = read_geotiff(first_file)
+
+    if crs is None or not crs.is_geographic:
+        raise ValueError(f"El GeoTIFF debe usar un CRS geográfico: {first_file} ({crs})")
+
+    if transform.b != 0 or transform.d != 0:
+        raise ValueError(f"El GeoTIFF usa una transformación rotada no soportada: {first_file}")
 
     ny, nx = first_data.shape
 
@@ -143,7 +151,7 @@ def load_ensemble():
             if not os.path.exists(path):
                 raise FileNotFoundError(f"No existe archivo: {path}")
 
-            data, _ = read_geotiff(path)
+            data, file_transform, file_crs = read_geotiff(path)
 
             if data.shape != (ny, nx):
 
@@ -151,6 +159,12 @@ def load_ensemble():
                     f"Dimensiones inconsistentes en {path}: "
                     f"{data.shape} != {(ny, nx)}"
                 )
+
+            if file_transform != transform:
+                raise ValueError(f"Transformación geográfica inconsistente en {path}")
+
+            if file_crs != crs:
+                raise ValueError(f"CRS inconsistente en {path}: {file_crs} != {crs}")
 
             ensemble[t - 1, member_index, :, :] = data
 

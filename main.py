@@ -12,8 +12,6 @@ from graphics.panels import (
     create_all_panels,
 )
 
-from config.config import NT
-
 from core.accumulations import accumulate_period
 
 # =====================================================
@@ -75,6 +73,9 @@ def process_6h_accumulations(
     for start in range(0, nt, 6):
 
         end = min(start + 6, nt)
+
+        if end - start < 6:
+            continue
 
         stack = accumulate_period(
             ensemble,
@@ -186,7 +187,7 @@ def process_forecast(
     print("Generando productos")
 
     for t in tqdm(
-        range(NT),
+        range(ensemble.shape[0]),
         desc="Procesando",
     ):
 

@@ -8,7 +8,10 @@ import cartopy.crs as ccrs
 from graphics.basemap import draw_base
 from graphics.colormaps import get_style
 
-from core.dates import format_valid_time
+from core.dates import (
+    format_valid_time,
+    forecast_hour,
+)
 
 from config.config import (
     FIGSIZE,
@@ -254,15 +257,14 @@ def plot_product(
     # Campo
     # -----------------------------------------
 
-    from config.config import EXTENT
-
-    mesh = ax.imshow(
+    mesh = ax.pcolormesh(
+        lon,
+        lat,
         data,
-        origin="upper",
-        extent=EXTENT,
         transform=ccrs.PlateCarree(),
         cmap=cmap,
         norm=norm,
+        shading="auto",
     )
 
     # -----------------------------------------
@@ -395,7 +397,7 @@ def create_panel(
     fig.text(
         0.5,
         0.945,
-        f"Valid: {valid_time} UTC   •   Lead Time: +{timestep:03d} h",
+        f"Valid: {valid_time}   |   Lead Time: +{forecast_hour(timestep):03d} h",
         ha="center",
         fontsize=14,
         fontstyle="italic",
@@ -465,6 +467,7 @@ def create_operational_panel(
     lon,
     lat,
     timestep,
+    suffix="",
 ):
     """
     Genera el panel operacional.
@@ -476,6 +479,7 @@ def create_operational_panel(
         lat=lat,
         timestep=timestep,
         panel_type="operational",
+        suffix=suffix,
     )
 
 
@@ -484,6 +488,7 @@ def create_uncertainty_panel(
     lon,
     lat,
     timestep,
+    suffix="",
 ):
     """
     Genera el panel de incertidumbre.
@@ -495,6 +500,7 @@ def create_uncertainty_panel(
         lat=lat,
         timestep=timestep,
         panel_type="uncertainty",
+        suffix=suffix,
     )
 
 
@@ -503,6 +509,7 @@ def create_probability_panel(
     lon,
     lat,
     timestep,
+    suffix="",
 ):
     """
     Genera el panel probabilístico.
@@ -514,6 +521,7 @@ def create_probability_panel(
         lat=lat,
         timestep=timestep,
         panel_type="probability",
+        suffix=suffix,
     )
 
 

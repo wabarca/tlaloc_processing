@@ -1,3 +1,5 @@
+import os
+
 # =====================================================
 # SERVIDOR WRF
 # =====================================================
@@ -18,9 +20,15 @@ NT = 87
 # DIRECTORIOS
 # =====================================================
 
-RAW_DIR = "tmp/tlaloc_raw"
+RAW_DIR = os.environ.get(
+    "TLALOC_RAW_DIR",
+    "/tmp/tlaloc_raw",
+)
 
-OUTPUT_DIR = "paneles_ensemble"
+OUTPUT_DIR = os.environ.get(
+    "TLALOC_OUTPUT_DIR",
+    "paneles_ensemble",
+)
 
 OPERATIONAL_DIR = f"{OUTPUT_DIR}/operational"
 
@@ -204,11 +212,3 @@ DPI = 150
 PANEL_ROWS = 3
 
 PANEL_COLS = 3
-
-ACC6H_DIR = f"{OUTPUT_DIR}/accum_6h"
-
-ACC24_DIR = f"{OUTPUT_DIR}/accum_24h"
-
-ACC48_DIR = f"{OUTPUT_DIR}/accum_48h"
-
-ACC72_DIR = f"{OUTPUT_DIR}/accum_72h"

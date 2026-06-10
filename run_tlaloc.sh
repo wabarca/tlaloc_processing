@@ -1,21 +1,16 @@
 #!/bin/bash
 source /home/wrf/.bashrc
 
-# Limpieza de datos
-rm /tmp/tlaloc_raw/*
-
 BASE_DIR=/home/wrf/scripts
 LOG_DIR=$BASE_DIR/logs
 ENV_NAME=tlaloc
 
 OUT_DIR=/compartido/web/paneles_ensemble
 FECHA=$(date +"%Y-%m-%d")
+ARCHIVE_DIR=/compartido/web/$FECHA
 
-#$FECHA
-
-mkdir -p /compartido/web/$FECHA
-
-cp -R $OUT_DIR/* /compartido/web/$FECHA/
+export TLALOC_RAW_DIR=/tmp/tlaloc_raw
+export TLALOC_OUTPUT_DIR=$BASE_DIR/paneles_ensemble
 
 DATE=$(date +"%Y%m%d_%H%M")
 LOG_FILE=$LOG_DIR/tlaloc_$DATE.log
@@ -33,7 +28,17 @@ conda activate $ENV_NAME
 
 cd $BASE_DIR
 
-/home/wrf/miniconda3/envs/tlaloc/bin/python3 unico.py >> $LOG_FILE 2>&1
+# Limpieza de datos descargados anteriormente
+rm -f /tmp/tlaloc_raw/*
+
+if /home/wrf/miniconda3/envs/tlaloc/bin/python3 main.py >> $LOG_FILE 2>&1; then
+    mkdir -p "$OUT_DIR" "$ARCHIVE_DIR"
+    cp -R "$BASE_DIR/paneles_ensemble/." "$OUT_DIR/"
+    cp -R "$OUT_DIR/." "$ARCHIVE_DIR/"
+else
+    echo "ERROR: main.py terminó con estado no exitoso" >> "$LOG_FILE"
+    exit 1
+fi
 
 echo "Fin: $(date)" >> $LOG_FILE
 echo "=================================" >> $LOG_FILE
