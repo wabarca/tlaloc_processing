@@ -207,14 +207,34 @@ def draw_grid(ax):
     Grid geográfico.
     """
 
+    import matplotlib.ticker as mticker
+    from cartopy.mpl.gridliner import (
+        LONGITUDE_FORMATTER,
+        LATITUDE_FORMATTER,
+    )
+
     gl = ax.gridlines(
-        draw_labels=False,
+        crs=ccrs.PlateCarree(),
+        draw_labels=True,
         linewidth=0.3,
         linestyle="--",
         alpha=0.4,
-        zorder=5,
     )
 
+    gl.top_labels = False
+    gl.right_labels = False
+
+    gl.xlabel_style = {
+        "size": 12,
+    }
+
+    gl.ylabel_style = {
+        "size": 12,
+    }
+
+    gl.xformatter = mticker.FormatStrFormatter("%.1f°")
+
+    gl.yformatter = mticker.FormatStrFormatter("%.1f°")
     return gl
 
 

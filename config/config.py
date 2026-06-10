@@ -195,8 +195,8 @@ COASTLINE_SHP = f"{SHAPEFILES_DIR}/GSHHS_h_L1.shp"
 # =====================================================
 
 FIGSIZE = (
-    16,
-    12,
+    21,
+    18,
 )
 
 DPI = 150
@@ -204,3 +204,11 @@ DPI = 150
 PANEL_ROWS = 3
 
 PANEL_COLS = 3
+
+ACC6H_DIR = f"{OUTPUT_DIR}/accum_6h"
+
+ACC24_DIR = f"{OUTPUT_DIR}/accum_24h"
+
+ACC48_DIR = f"{OUTPUT_DIR}/accum_48h"
+
+ACC72_DIR = f"{OUTPUT_DIR}/accum_72h"

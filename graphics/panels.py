@@ -20,6 +20,30 @@ from config.config import (
     PROBABILITY_DIR,
 )
 
+from core.ensemble import compute_products
+from core.accumulations import (
+    accumulate_period,
+    rolling_windows,
+)
+from matplotlib import rcParams
+
+from matplotlib.ticker import FormatStrFormatter
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+# =====================================================
+# GLOBAL STYLE
+# =====================================================
+
+rcParams["font.family"] = "DejaVu Sans"
+
+rcParams["axes.titleweight"] = "bold"
+
+rcParams["axes.titlesize"] = 14
+
+rcParams["xtick.labelsize"] = 12
+
+rcParams["ytick.labelsize"] = 12
+
 # =====================================================
 # PRODUCT DEFINITIONS
 # =====================================================
@@ -230,15 +254,15 @@ def plot_product(
     # Campo
     # -----------------------------------------
 
-    mesh = ax.pcolormesh(
-        lon,
-        lat,
+    from config.config import EXTENT
+
+    mesh = ax.imshow(
         data,
+        origin="upper",
+        extent=EXTENT,
+        transform=ccrs.PlateCarree(),
         cmap=cmap,
         norm=norm,
-        transform=ccrs.PlateCarree(),
-        shading="auto",
-        rasterized=True,
     )
 
     # -----------------------------------------
@@ -247,24 +271,38 @@ def plot_product(
 
     ax.set_title(
         title,
-        fontsize=10,
-        pad=4,
+        fontsize=14,
+        fontweight="bold",
+        pad=3,
     )
 
     # -----------------------------------------
-    # Colorbar
+    # Colorbar (Inset)
     # -----------------------------------------
+
+    cax = inset_axes(
+        ax,
+        width="60%",
+        height="4%",
+        loc="lower center",
+        bbox_to_anchor=(0.0, -0.125, 1.0, 1.0),
+        bbox_transform=ax.transAxes,
+        borderpad=0,
+    )
 
     cbar = plt.colorbar(
         mesh,
-        ax=ax,
+        cax=cax,
         orientation="horizontal",
-        pad=0.02,
-        shrink=0.85,
-        aspect=30,
     )
 
-    cbar.ax.tick_params(labelsize=7)
+    cbar.ax.xaxis.set_major_formatter(FormatStrFormatter("%.1f"))
+
+    cbar.ax.tick_params(
+        labelsize=8,
+        length=2,
+        pad=1,
+    )
 
     return mesh
 
@@ -280,6 +318,7 @@ def create_panel(
     lat,
     timestep,
     panel_type,
+    suffix="",
 ):
     """
     Genera un panel completo.
@@ -347,26 +386,32 @@ def create_panel(
     valid_time = format_valid_time(timestep)
 
     fig.suptitle(
-        (
-            "TLALOC Ensemble Forecast\n"
-            f"Valid: {valid_time}\n"
-            f"Lead Time: +{timestep:03d} h"
-        ),
-        fontsize=16,
-        y=0.98,
+        "TLALOC Ensemble Forecast",
+        fontsize=24,
+        fontweight="bold",
+        y=0.985,
+    )
+
+    fig.text(
+        0.5,
+        0.945,
+        f"Valid: {valid_time} UTC   •   Lead Time: +{timestep:03d} h",
+        ha="center",
+        fontsize=14,
+        fontstyle="italic",
     )
 
     # -----------------------------------------
     # Ajustes
     # -----------------------------------------
 
-    plt.tight_layout(
-        rect=[
-            0,
-            0,
-            1,
-            0.95,
-        ]
+    fig.subplots_adjust(
+        left=0.01,
+        right=0.99,
+        bottom=0.04,
+        top=0.92,
+        wspace=0.015,
+        hspace=0.25,
     )
 
     # -----------------------------------------
@@ -392,7 +437,7 @@ def create_panel(
 
     outfile = os.path.join(
         output_dir,
-        (f"{panel_type}" f"_h{timestep:03d}.png"),
+        f"{panel_type}{suffix}_h{timestep:03d}.png",
     )
 
     # -----------------------------------------
@@ -482,6 +527,7 @@ def create_all_panels(
     lon,
     lat,
     timestep,
+    suffix="",
 ):
     """
     Genera todos los paneles para
@@ -499,6 +545,7 @@ def create_all_panels(
         lon,
         lat,
         timestep,
+        suffix,
     )
 
     files["uncertainty"] = create_uncertainty_panel(
@@ -506,6 +553,7 @@ def create_all_panels(
         lon,
         lat,
         timestep,
+        suffix,
     )
 
     files["probability"] = create_probability_panel(
@@ -513,6 +561,169 @@ def create_all_panels(
         lon,
         lat,
         timestep,
+        suffix,
     )
 
     return files
+
+
+# =====================================================
+# HOURLY PANELS
+# =====================================================
+
+
+def generate_hourly_panels(
+    ensemble,
+    lon,
+    lat,
+):
+    """
+    ensemble:
+        (time,members,y,x)
+    """
+
+    nt = ensemble.shape[0]
+
+    for timestep in range(nt):
+
+        stack = ensemble[timestep]
+
+        products = compute_products(stack)
+
+        create_all_panels(
+            products=products,
+            lon=lon,
+            lat=lat,
+            timestep=timestep + 1,
+        )
+
+
+# =====================================================
+# ACCUMULATION PANELS
+# =====================================================
+
+
+def generate_accumulation_panels(
+    ensemble,
+    lon,
+    lat,
+    accumulation_hours,
+):
+    """
+    Genera paneles acumulados
+    por bloques.
+
+    Ejemplos:
+        6h
+        24h
+    """
+
+    nt = ensemble.shape[0]
+
+    windows = rolling_windows(
+        nt,
+        accumulation_hours,
+    )
+
+    for start, end in windows:
+
+        stack = accumulate_period(
+            ensemble,
+            start,
+            end,
+        )
+
+        products = compute_products(stack)
+
+        timestep = end
+
+        create_all_panels(
+            products=products,
+            lon=lon,
+            lat=lat,
+            timestep=timestep,
+        )
+
+
+# =====================================================
+# CUMULATIVE PANELS
+# =====================================================
+
+
+def generate_cumulative_panel(
+    ensemble,
+    lon,
+    lat,
+    hours,
+):
+    """
+    Acumulado desde t=0
+    hasta la hora indicada.
+
+    Ejemplos:
+        48h
+        72h
+    """
+
+    stack = accumulate_period(
+        ensemble,
+        0,
+        min(hours, ensemble.shape[0]),
+    )
+
+    products = compute_products(stack)
+
+    create_all_panels(
+        products=products,
+        lon=lon,
+        lat=lat,
+        timestep=hours,
+    )
+
+
+# =====================================================
+# DAILY ACCUMULATION PANELS
+# =====================================================
+
+
+def generate_daily_panels(
+    ensemble,
+    lon,
+    lat,
+):
+    """
+    Día 1 = 0-24h
+    Día 2 = 24-48h
+    Día 3 = 48-72h
+    """
+
+    periods = [
+        (0, 24),
+        (24, 48),
+        (48, 72),
+    ]
+
+    for start, end in periods:
+
+        if start >= ensemble.shape[0]:
+            continue
+
+        end = min(
+            end,
+            ensemble.shape[0],
+        )
+
+        stack = accumulate_period(
+            ensemble,
+            start,
+            end,
+        )
+
+        products = compute_products(stack)
+
+        create_all_panels(
+            products=products,
+            lon=lon,
+            lat=lat,
+            timestep=end,
+        )

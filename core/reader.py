@@ -11,6 +11,7 @@ from config.config import (
     RAW_DIR,
     MEMBERS,
     NT,
+    EXTENT,
 )
 
 
@@ -28,6 +29,13 @@ def read_geotiff(path):
             out_dtype=np.float32,
         )
         transform = src.transform
+
+        print(path)
+
+        print(
+            np.nanmin(data),
+            np.nanmax(data),
+        )
 
     return data, transform
 

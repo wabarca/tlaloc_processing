@@ -14,6 +14,8 @@ from graphics.panels import (
 
 from config.config import NT
 
+from core.accumulations import accumulate_period
+
 # =====================================================
 # TIMESTEP
 # =====================================================
@@ -54,6 +56,122 @@ def process_timestep(
 # =====================================================
 # FORECAST
 # =====================================================
+
+# =====================================================
+# 6 HOUR ACCUMULATIONS
+# =====================================================
+
+
+def process_6h_accumulations(
+    ensemble,
+    lon,
+    lat,
+):
+
+    print("Generando acumulados 6h")
+
+    nt = ensemble.shape[0]
+
+    for start in range(0, nt, 6):
+
+        end = min(start + 6, nt)
+
+        stack = accumulate_period(
+            ensemble,
+            start,
+            end,
+        )
+
+        products = compute_products(stack)
+
+        create_all_panels(
+            products=products,
+            lon=lon,
+            lat=lat,
+            timestep=end,
+            suffix="_acc06",
+        )
+
+
+# =====================================================
+# DAILY ACCUMULATIONS
+# =====================================================
+
+
+def process_daily_accumulations(
+    ensemble,
+    lon,
+    lat,
+):
+
+    print("Generando acumulados diarios")
+
+    periods = [
+        ("day1", 0, 24),
+        ("day2", 24, 48),
+        ("day3", 48, 72),
+    ]
+
+    for label, start, end in periods:
+
+        if start >= ensemble.shape[0]:
+            continue
+
+        end = min(
+            end,
+            ensemble.shape[0],
+        )
+
+        stack = accumulate_period(
+            ensemble,
+            start,
+            end,
+        )
+
+        products = compute_products(stack)
+
+        create_all_panels(
+            products=products,
+            lon=lon,
+            lat=lat,
+            timestep=end,
+            suffix=f"_{label}",
+        )
+
+
+# =====================================================
+# CUMULATIVE ACCUMULATIONS
+# =====================================================
+
+
+def process_cumulative_accumulations(
+    ensemble,
+    lon,
+    lat,
+):
+
+    print("Generando acumulados 48h y 72h")
+
+    for hours in [48, 72]:
+
+        if hours > ensemble.shape[0]:
+            continue
+
+        stack = accumulate_period(
+            ensemble,
+            0,
+            hours,
+        )
+
+        products = compute_products(stack)
+
+        create_all_panels(
+            products=products,
+            lon=lon,
+            lat=lat,
+            timestep=hours,
+            suffix=f"_acc{hours}",
+        )
 
 
 def process_forecast(
@@ -123,6 +241,24 @@ def main():
         # -------------------------------------
 
         start = time.time()
+
+        process_6h_accumulations(
+            ensemble,
+            lon,
+            lat,
+        )
+
+        process_daily_accumulations(
+            ensemble,
+            lon,
+            lat,
+        )
+
+        process_cumulative_accumulations(
+            ensemble,
+            lon,
+            lat,
+        )
 
         process_forecast(
             ensemble,
